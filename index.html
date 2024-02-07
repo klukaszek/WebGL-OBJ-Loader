@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>WebGL Demo</title>
+  <link rel="stylesheet" href="./webgl.css" type="text/css">
+
+  <link rel="stylesheet" href="./webgl.css" type="text/css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
+    integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
+    crossorigin="anonymous">
+    </script>
+  <!-- Tweakpane is a GUI library that I used for debugging and visualization. -->
+  <!-- The original CDN file would not work so I downloaded the source file and removed the exports -->
+  <script src="utility/tweakpane.js"></script>
+  <script src="utility/noise.js"></script>
+  <script src="utility/camera.js"></script>
+  <script src="utility/gui.js" defer></script>
+  <script src="loaddata.js"></script>
+  <script src="webgl-demo.js" defer></script>
+
+  <style>
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+      /* make scrollbar transparent */
+    }
+
+    #gui {
+      position: absolute;
+      opacity: 1;
+    }
+
+    #glcanvas {
+      padding: 0;
+      margin: auto;
+      display: block;
+      position: absolute;
+      overflow: hidden;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border: none;
+    }
+  </style>
+
+</head>
+
+
+<body>
+  <script>
+
+    // Read a file from the input element
+    function readFiles(input) {
+
+      // We have to set this to false to avoid any WebGL errors when the user tries to load a new file
+      loaded = false;
+
+      // Don't do anything if there are not enough files
+      if (input.files.length < 2) {
+        console.log("Please select both an obj and a ppm file");
+        return;
+      }
+
+      let count = 0;
+
+      // Loop through the files and read the data
+      for (let i = 0; i < input.files.length; i++) {
+        let file = input.files[i];
+        let reader = new FileReader();
+        reader.readAsBinaryString(file);
+
+        reader.onload = function () {
+          if (file.name.includes(".obj")) {
+            initGeometry(reader.result);
+          } else if (file.name.includes(".ppm")) {
+            initTexture(reader.result);
+          } else {
+            console.log("Invalid file type");
+          }
+
+          // If all the files have been read, start WebGL
+          if (count == input.files.length - 1) {
+            initAll();
+            loaded = true;
+          }
+
+          count++;
+        }
+
+        reader.onerror = function () {
+          console.log(reader.error);
+        };
+      }
+    }
+
+    // Initialize GUI when the page is loaded
+    document.addEventListener("DOMContentLoaded", function (event) {
+
+      initGui(DEFAULT_GUI_PARAMS);
+
+    });
+
+  </script>
+
+  <canvas id="glcanvas" width="1024" height="768"></canvas>
+  <input type="file" onchange="readFiles(this)" multiple>
+  <div id="gui" width="100px" height="20px" style="padding-top: 10px;"></div>
+
+</body>
+
+</html>
