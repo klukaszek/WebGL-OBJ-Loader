@@ -465,10 +465,10 @@ function initModelSettings(pane, params = DEFAULT_GUI_PARAMS) {
     view: 'list',
     label: 'Model List',
     options: [
-      {text: 'Bat', value: './models2/bat'},
-      {text: 'Cube', value: './models2/cube'},
-      {text: 'Cow', value: './models2/cow'},
-      {text: 'Fish', value: './models2/fish'},
+      {text: 'Bat', value: '../models2/bat'},
+      {text: 'Cube', value: '../models2/cube'},
+      {text: 'Cow', value: '../models2/cow'},
+      {text: 'Fish', value: '../models2/fish'},
     ],
     value: '',
   })
