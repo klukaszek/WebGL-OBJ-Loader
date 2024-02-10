@@ -67,7 +67,10 @@ function main() {
     varying highp vec2 vTextureCoord;
     varying highp vec3 vLighting;
     uniform sampler2D uSampler;
+    uniform highp vec2 uResolution;
     void main(void) {
+      // If the resolution of the canvas changes, we need to update the uvs
+      highp vec2 uv = (gl_FragCoord.xy / uResolution.xy) * 2.0 - 1.0;
       highp vec4 texelColor = texture2D(uSampler, vTextureCoord);
       gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);
     }
@@ -93,6 +96,7 @@ function main() {
       modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
       normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
       uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+      uResolution: gl.getUniformLocation(shaderProgram, 'uResolution'),
     }
   };
 
@@ -389,6 +393,9 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
 
   // Tell the shader we bound the texture to texture unit 0
   gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+
+  // Tell the shader the resolution of the canvas
+  gl.uniform2f(programInfo.uniformLocations.uResolution, gl.canvas.width, gl.canvas.height);
 
   {
     const vertexCount = getVertexCount();

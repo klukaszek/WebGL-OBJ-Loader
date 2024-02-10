@@ -71,6 +71,7 @@
         let file = input.files[i];
         let reader = new FileReader();
         reader.readAsBinaryString(file);
+        
 
         reader.onload = function () {
           if (file.name.includes(".obj")) {
