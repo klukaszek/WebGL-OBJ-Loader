@@ -70,9 +70,9 @@
       for (let i = 0; i < input.files.length; i++) {
         let file = input.files[i];
         let reader = new FileReader();
-        reader.readAsBinaryString(file);
+        reader.readAsText(file);
         
-
+        // Once the file is read, initialize whichever data type it is
         reader.onload = function () {
           if (file.name.includes(".obj")) {
             initGeometry(reader.result);

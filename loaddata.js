@@ -25,6 +25,8 @@ let textureCoords = [];
 // create vertex, normal, texture, and index information
 function initGeometry(objFile) {
 
+	console.log("Loading geometry from .obj file");
+
 	// Reset the geometry arrays to empty if they are not already
 	// This is to ensure that the geometry arrays are empty if the user loads a new .obj file
 	vertices = [];
@@ -114,8 +116,13 @@ function initGeometry(objFile) {
 	});
 }
 
+/**
+ * Calculate the normals for the vertices of a mesh based on the faces
+ * @param {*} local_vertices 
+ * @param {*} faces 
+ * @returns face normals
+ */
 function calculateMeshNormals(local_vertices, faces) {
-
 	// Create an array to store the normals for each vertex, and initialize them to [0, 0, 0]
 	let local_normals = new Array(faces.length).fill([0, 0, 0]);
 
@@ -261,10 +268,6 @@ function parseP6PPM(str) {
 	imageHeight = parseInt(height);
 	imageDepth = parseInt(maxColorValue);
 
-	console.log("Width: ", imageWidth);
-	console.log("Height: ", imageHeight);
-	console.log("Depth: ", imageDepth);
-
 	// Get the image data
 	const dataSize = imageWidth * imageHeight * 3;
 	imageData = new Uint8Array(buffer, offset, dataSize);
@@ -284,6 +287,28 @@ function convertToRGBA(imageData) {
 		tempImageData.push(255);
 	}
 	return tempImageData;
+}
+
+/**
+ * Calculate the new vertex positions after rotating the vertices by the given angle
+ * This function is rather inefficient, but it works
+ * @param {*} rotationAngle Angle in radians to rotate the vertices by
+ * @returns 
+ */
+function rotateVertices(rotationAngle) {
+    const rotationMatrix = mat4.create();
+
+	// Rotate rotationMatrix around the y axis
+    mat4.rotate(rotationMatrix, rotationMatrix, rotationAngle, [0, 1, 0]);
+
+    // Iterate over each vertex and apply the rotation
+    for (let i = 0; i < vertices.length; i += 3) {
+        const vertex = vertices.slice(i, i + 3); // Extract [x, y, z] for each vertex
+        vec3.transformMat4(vertex, vertex, rotationMatrix);
+        vertices[i] = vertex[0];
+        vertices[i + 1] = vertex[1];
+        vertices[i + 2] = vertex[2];
+    }
 }
 
 // return the number of indices in the object

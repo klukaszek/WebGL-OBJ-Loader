@@ -20,6 +20,8 @@ let programInfo = null;
 let buffers = {};
 let texture = null;
 
+let modelRotating = false;
+
 /*
 To render a plane in higher resolution, I had to change the index buffer type from
 gl.UNSIGNED_SHORT to gl.UNSIGNED_INT. This allows us to use vertices > 65535.
@@ -298,6 +300,26 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
     camera.aspect,
     camera.near,
     camera.far);
+
+  /*
+  Rotate the model by 15 degrees every frame.
+  */
+  if (modelRotating == true)
+  {
+    // Function to rotate vertices found in loaddata.js
+    rotateVertices((Math.PI / 12) * deltaTime);
+
+    // load vertex data from loaddata.js to update vertices buffer after rotation
+    positions = loadvertices();
+
+    // Bind the position buffer so we can update the vertices
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+
+    // Now pass the list of positions into WebGL to build the
+    // shape. We do this by creating a Float32Array from the
+    // JavaScript array, then use it to fill the current buffer.
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  }
 
   const normalMatrix = mat4.create();
   mat4.invert(normalMatrix, modelViewMatrix);

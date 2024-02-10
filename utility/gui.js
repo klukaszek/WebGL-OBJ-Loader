@@ -33,6 +33,10 @@ const DEFAULT_GUI_PARAMS = {
     near: 0.1,
     far: 100,
   },
+  model: {
+    path: '',
+    rotating: false,
+  },
 }
 
 let gui_params = DEFAULT_GUI_PARAMS;
@@ -115,6 +119,10 @@ function initGui(params = DEFAULT_GUI_PARAMS) {
   // Always include the camera_settings pane
   // Store all blades we create for the camera_settings folder
   let camera_settings = initCameraSettings(pane, params);
+
+
+  // Load a model from a list of pre-defined models
+  const model_settings = initModelSettings(pane, params);
 
   return { pane, params };
 }
@@ -314,9 +322,30 @@ function initCameraSettings(pane, params = DEFAULT_GUI_PARAMS) {
       },
     );
 
-    const pos1_btn = camera_settings.addButton({ title: 'Angled Camera' });
+    const pos1_btn = camera_settings.addButton({ title: 'Default Camera' });
     pos1_btn.on('click', () => {
-        camera.eye = vec3.fromValues(0, 1, 1);
+        camera.eye = vec3.fromValues(0, 0, 3);
+
+        // Rotate the camera around the x axis
+        camera.tilt(0 - camera.angles[0]);
+        camera.angles[0] = 0;
+
+        // Rotate the camera around the y axis
+        camera.pan(0 - camera.angles[1]);
+        camera.angles[1] = 0;
+
+        // Rotate the camera around the z axis
+        camera.cant(0 - camera.angles[2]);
+        camera.angles[2] = 0;
+
+        camera.update();
+        set_params(params);
+        pane.refresh();
+    });
+
+    const pos2_btn = camera_settings.addButton({ title: 'Angled Camera' });
+    pos2_btn.on('click', () => {
+        camera.eye = vec3.fromValues(0, 2, 2);
 
         // Rotate the camera around the x axis
         camera.tilt(-Math.PI / 4 - camera.angles[0]);
@@ -329,33 +358,33 @@ function initCameraSettings(pane, params = DEFAULT_GUI_PARAMS) {
         // Rotate the camera around the z axis
         camera.cant(0 - camera.angles[2]);
         camera.angles[2] = 0;
+        camera.update();
 
-        //camera.update();
-        set_params(params);
-        pane.refresh();
-    });
-
-    const pos2_btn = camera_settings.addButton({ title: 'Perpendicular Camera' });
-    pos2_btn.on('click', () => {
-        camera.eye = vec3.fromValues(0, 2, 0);
-
-        // Rotate the camera around the x axis
-        camera.tilt(-Math.PI / 2 - camera.angles[0]);
-        camera.angles[0] = -Math.PI / 2;
-
-        // Rotate the camera around the y axis
-        camera.pan(0 - camera.angles[1]);
-        camera.angles[1] = 0;
-
-        // Rotate the camera around the z axis
-        camera.cant(0 - camera.angles[2]);
-        camera.angles[2] = 0;
-        
-        //camera.update();
         set_params(params);
         pane.refresh();
     });    
   }
+
+  const pos3_btn = camera_settings.addButton({ title: 'Top Down Camera' });
+  pos3_btn.on('click', () => {
+      camera.eye = vec3.fromValues(0, 7, 0);
+
+      // Rotate the camera around the x axis
+      camera.tilt(-Math.PI/2 - camera.angles[0]);
+      camera.angles[0] = -Math.PI/2;
+
+      // Rotate the camera around the y axis
+      camera.pan(0 - camera.angles[1]);
+      camera.angles[1] = 0;
+
+      // Rotate the camera around the z axis
+      camera.cant(0 - camera.angles[2]);
+      camera.angles[2] = 0;
+      
+      //camera.update();
+      set_params(params);
+      pane.refresh();
+  });
 
   // Manage camera view settings as subfolder of camera_settings
   {
@@ -425,6 +454,70 @@ function initCameraSettings(pane, params = DEFAULT_GUI_PARAMS) {
   return { camera_settings };
 }
 
+// This entire function exists just to make testing easier on github pages.
+// Not needed for the assignment
+function initModelSettings(pane, params = DEFAULT_GUI_PARAMS) {
+
+  const model_settings = pane.addFolder({ view: 'folder', title: 'Load Testing Models', expanded: false });
+
+  // Manage model selection
+  const model_select = model_settings.addBlade({
+    view: 'list',
+    label: 'Model List',
+    options: [
+      {text: 'Bat', value: '../models2/bat'},
+      {text: 'Cube', value: '../models2/cube'},
+      {text: 'Cow', value: '../models2/cow'},
+      {text: 'Fish', value: '../models2/fish'},
+    ],
+    value: '',
+  })
+
+  // Set the state to not loaded, and then load the model and texture into memory
+  // The button to set the model will be disabled until the model and texture are loaded
+  model_select.on('change', async (ev) => {
+    
+    let path = ev.value;
+
+    // Load the model
+    await fetch(path + '.obj')
+      .then(loaded = false)     // Set the state to not loaded to pause the render loop
+      .then(response => response.text())  // Get the text from the response
+      .then(text => initGeometry(text))  // Initialize the geometry
+      .catch(err => console.error(err));
+
+    //Load the texture
+    await fetch(path + '.ppm')
+      .then(response => response.text())
+      .then(text => initTexture(text))
+      .then(() => {
+        // Initialize the buffers and the texture for the glcontext
+        initAll();
+        // Resume the render loop
+        loaded = true;
+      })
+      .catch(err => console.error(err));
+    
+    params.model.path = path;
+  });
+
+  // Manage plane rotation
+  const adjust_rotation = newBindingBlade(
+    model_settings,
+    'rotating',
+    params.model,
+    {
+      label: 'Rotate Model',
+    },
+    (ev) => {
+      params.model.rotating = ev.value;
+      modelRotating = params.model.rotating;
+    },
+  );
+
+  return { model_settings };
+}
+
 /**
  * Create a binding "Blade" that is bound to the given parameters
  * @param {Pane} blade parent node
@@ -448,7 +541,7 @@ const newBindingBlade = (blade, param_binding, params, new_params, callback, typ
  * @param {*} deltaTime 
  */
 const guiUpdateSceneInfo = (fps, frametime) => {
-  fps_blade.value = String(fps.toFixed(2));
+  fps_blade.value = String(Math.trunc(fps));
   frametime_blade.value = String(frametime.toFixed(2));
   vertex_blade.value = String(getVertexCount());
 }
